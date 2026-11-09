@@ -2,7 +2,7 @@
 #include <cstdio>
 #include <utility>
 
-// 1. Hamara RAII Memory Buffer (Stage 2 wala hi, no change)
+// 1. AII Memory Buffer 
 struct DeviceBuffer{
     void* ptr=nullptr;
     size_t bytes=0;
@@ -28,7 +28,7 @@ struct DeviceBuffer{
     T* data(){ return reinterpret_cast<T*>(ptr); }
 };
 
-// 2. NAYA BADLAV: Hamara 24-byte ka StringView Lifafa (Mehmaan Chashma)
+// 2. 24-byte ka StringView
 struct StringView{
     const int* d_offsets; // Address 0x100
     const char* d_chars;   // Address 0x200
@@ -36,7 +36,7 @@ struct StringView{
     int total_bytes;       // 6
 };
 
-// 3. NAYA BADLAV: Kernel ab 4 ki jagah sirf 2 arguments leta hai (in aur d_out)
+// 3. Kernel
 __global__ void reverse_strings_kernel(StringView in,char* d_out){
     int idx=blockIdx.x*blockDim.x+threadIdx.x;
     if(idx>=in.num_strings) return;
@@ -65,7 +65,7 @@ int main(){
     cudaMemcpy(buf_in.data<char>(),h_in,total_bytes*sizeof(char),cudaMemcpyHostToDevice);
     cudaMemcpy(buf_offsets.data<int>(),h_offsets,(num_strings+1)*sizeof(int),cudaMemcpyHostToDevice);
 
-    // B. NAYA BADLAV: CPU Stack par StringView ka 24-byte packet pack kiya
+    // B. CPU Stack par StringView ka 24-byte packet pack kiya
     StringView in_view{
         buf_offsets.data<int>(),
         buf_in.data<char>(),
@@ -73,17 +73,14 @@ int main(){
         total_bytes
     };
 
-    // C. NAYA BADLAV: Clean Kernel Launch! (Sirf packet aur output address bheja)
+    // C. Clean Kernel Launch! (Sirf packet aur output address bheja)
     reverse_strings_kernel<<<1,2>>>(in_view,buf_out.data<char>());
     cudaDeviceSynchronize();
 
     // D. Print Result
     char h_out[7]={0};
     cudaMemcpy(h_out,buf_out.data<char>(),total_bytes*sizeof(char),cudaMemcpyDeviceToHost);
-
-    printf("\n==================================================\n");
     printf("   STAGE 3 RUN: DeviceBuffer + StringView ON T4\n");
-    printf("==================================================\n");
     printf("Input Strings   : \"CAT\", \"DOG\"\n");
     printf("Output Raw Chars: \"%s\"\n\n",h_out);
 
@@ -96,7 +93,6 @@ int main(){
         }
         printf("\"\n");
     }
-    printf("==================================================\n");
     printf("Clean StringView passed by value to GPU Registers!\n\n");
 
     return 0;
